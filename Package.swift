@@ -18,11 +18,7 @@ let package = Package(
     targets: [
         .target(
             name: "Keychain",
-            dependencies: [],
-            linkerSettings: [
-                .linkedFramework("AdSupport"),
-                .linkedFramework("Security")
-            ]
+            dependencies: []
         ),
         .target(
             name: "KeychainHelper",
