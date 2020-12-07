@@ -22,17 +22,25 @@ public struct KeychainHelper {
 
 public extension KeychainHelper {
     
-    static var uniqueIdentifier: String = {
-        #if DEBUG_KEYCHAIN_HELPER
-        print("[KeychainHelper]: load uniqueIdentifier by key: \(projectBundleIdentifier)")
+    private static func DebugLog(_ value: String) {
+        #if DEBUG
+        print("[KeychainHelper.uniqueIdentifer]: ")
         #endif
-        
-        guard let uuid = Keychain.loadString(for: projectBundleIdentifier), uuid.count > 0 else {
+    }
+    
+    static func uniqueIdentifer(_ key: String = "_uniqueIdentifier", forService service: String = Bundle.main.bundleIdentifier ?? "") -> String {
+        DebugLog("will get identifier for key: \(key), service: \(service)")
+        var keychain = Keychain.generic
+        if service != projectBundleIdentifier {
+            keychain = Keychain(service: service)
+        }
+        guard let uuid = keychain.string(forKey: key), uuid.count > 0 else {
             let newUUID = generationUUID()
-            Keychain.save(value: newUUID, for: projectBundleIdentifier)
+            keychain.set(value: newUUID, forKey: key)
+            DebugLog("[New] did get uuid(\(newUUID) for key: \(key), service: \(service)")
             return newUUID
         }
+        DebugLog("[Keychain] did get uuid(\(uuid)) for key: \(key), service: \(service)")
         return uuid
-    }()
-    
+    }
 }

@@ -2,36 +2,53 @@ import Foundation
 import Security
 import AdSupport
 
-public struct Keychain {
-    private init() { }
+/// A simple wrapper of keychain
+public class Keychain {
     
+    public private(set) var service: String
     
-    /// Search info in keychain by service
-    /// - Parameter service: service of info
-    /// - Returns: [CFString: Any]
-    private static func search(by service: String) -> [CFString: Any] {
-        [
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: service,
-            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock
-        ]
+    required public init(service: String) {
+        self.service = service
+    }
+    
+    /// the service is: Bundle.main.bundleIdentifer ?? ""
+    public static let generic = Keychain(service: Bundle.main.bundleIdentifier ?? "")
+    
+}
+
+public extension Keychain {
+    
+    func query(forKey key: String) -> [CFString: Any] {
+        Provider.query(secClass: .generic, service: service, account: key)
+    }
+    
+    func data(forKey key: String) -> Data? {
+        let query = self.query(forKey: key)
+        var keyData: CFTypeRef?
+        if SecItemCopyMatching(query as CFDictionary, &keyData) == noErr {
+            guard let kd = keyData as? Data else { return nil }
+            return kd
+        }
+        return nil
     }
 }
 
 public extension Keychain {
     
-    @discardableResult static func save(value: Any, for service: String) -> Bool {
-        var keychain = search(by: service)
-        if SecItemCopyMatching(keychain as CFDictionary, nil) == noErr {
-            SecItemDelete(keychain as CFDictionary)
+    /// update if exists, add if not exists.
+    @discardableResult func set(value: Any, forKey key: String) -> Bool {
+        var query = self.query(forKey: key)
+        if SecItemCopyMatching(query as CFDictionary, nil) == noErr { // update if exists
+            let changes = [kSecValueData: NSKeyedArchiver.archivedData(withRootObject: value)]
+            return SecItemUpdate(query as CFDictionary, changes as CFDictionary) == noErr
         }
-        keychain[kSecValueData] = NSKeyedArchiver.archivedData(withRootObject: value)
-        return SecItemAdd(keychain as CFDictionary, nil) == noErr
+        // add if not exists
+        query[kSecValueData] = NSKeyedArchiver.archivedData(withRootObject: value)
+        return SecItemAdd(query as CFDictionary, nil) == noErr
     }
     
-    @discardableResult static func value(for service: String) -> Any? {
-        var keychain = search(by: service)
+    @discardableResult func value(forKey key: String) -> Any? {
+        var keychain = self.query(forKey: key)
         keychain[kSecReturnData] = kCFBooleanTrue
         keychain[kSecMatchLimit] = kSecMatchLimitOne
         
@@ -44,47 +61,12 @@ public extension Keychain {
         return ret
     }
     
-    @discardableResult static func loadString(for service: String) -> String? {
-        value(for: service) as? String
+    @discardableResult func string(forKey key: String) -> String? {
+        value(forKey: key) as? String
     }
     
-    @discardableResult static func remove(for service: String) -> Bool {
-        let keyChain = search(by: service)
+    @discardableResult func remove(key: String) -> Bool {
+        let keyChain = query(forKey: key)
         return SecItemDelete(keyChain as CFDictionary) == noErr
-    }
-    
-    @discardableResult static func update(value: Any, for service: String) -> Bool {
-        let keyChain = search(by: service)
-        let changes = [kSecValueData: NSKeyedArchiver.archivedData(withRootObject: value)]
-        return SecItemUpdate(keyChain as CFDictionary, changes as CFDictionary) == noErr
-    }
-}
-
-// MARK:- Deprecated
-public extension Keychain {
-    
-    @available(*, deprecated, renamed: "save(value:for:)", message: "use `save(value:for:) instead.`")
-    @discardableResult static func save(service: String, value: Any) -> Bool {
-        save(value: value, for: service)
-    }
-    
-    @available(*, deprecated, renamed: "value(for:)", message: "use `value(for:)` instead.")
-    @discardableResult static func load(for service: String) -> Any? {
-        value(for: service)
-    }
-    
-    @available(*, deprecated, renamed: "loadString(for:)", message: "use `loadString(for:)` instead.")
-    @discardableResult static func loadString(serivce: String) -> String? {
-        loadString(for: serivce)
-    }
-    
-    @available(*, deprecated, renamed: "loadString(for:)", message: "use `loadString(for:)` instead.")
-    @discardableResult static func delete(service: String) -> Bool {
-        remove(for: service)
-    }
-    
-    @available(*, deprecated, renamed: "update(value:for:)", message: "use `update(value:for:)` instead.")
-    @discardableResult static func update(service: String, value: Any) -> Bool {
-        update(value: value, for: service)
     }
 }
