@@ -6,14 +6,11 @@ import PackageDescription
 let package = Package(
     name: "Keychain",
     platforms: [
-        .iOS(.v10)
+        .iOS(.v9)
     ],
     products: [
         .library(name: "Keychain", targets: ["Keychain"]),
         .library(name: "KeychainHelper", targets: ["KeychainHelper"])
-    ],
-    dependencies: [
-        
     ],
     targets: [
         .target(

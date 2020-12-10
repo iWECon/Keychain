@@ -36,7 +36,7 @@ public extension Keychain {
 public extension Keychain {
     
     /// update if exists, add if not exists.
-    @discardableResult func set(value: Any, forKey key: String) -> Bool {
+    @discardableResult func set(_ value: Any, forKey key: String) -> Bool {
         var query = self.query(forKey: key)
         if SecItemCopyMatching(query as CFDictionary, nil) == noErr { // update if exists
             let changes = [kSecValueData: NSKeyedArchiver.archivedData(withRootObject: value)]

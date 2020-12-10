@@ -28,19 +28,21 @@ public extension KeychainHelper {
         #endif
     }
     
-    static func uniqueIdentifer(_ key: String = "_uniqueIdentifier", forService service: String = Bundle.main.bundleIdentifier ?? "") -> String {
-        DebugLog("will get identifier for key: \(key), service: \(service)")
+    static func uniqueIdentifier(_ key: String = "uniqueIdentifier", forService service: String = Bundle.main.bundleIdentifier ?? "") -> String {
+        let uniqueIdentifierKey = service + "." + key
+        DebugLog("will get identifier for key: \(uniqueIdentifierKey), service: \(service)")
         var keychain = Keychain.generic
         if service != projectBundleIdentifier {
             keychain = Keychain(service: service)
         }
-        guard let uuid = keychain.string(forKey: key), uuid.count > 0 else {
+        
+        guard let uuid = keychain.string(forKey: uniqueIdentifierKey), uuid.count > 0 else {
             let newUUID = generationUUID()
-            keychain.set(value: newUUID, forKey: key)
-            DebugLog("[New] did get uuid(\(newUUID) for key: \(key), service: \(service)")
+            keychain.set(newUUID, forKey: uniqueIdentifierKey)
+            DebugLog("[New] did get uuid(\(newUUID) for key: \(uniqueIdentifierKey), service: \(service)")
             return newUUID
         }
-        DebugLog("[Keychain] did get uuid(\(uuid)) for key: \(key), service: \(service)")
+        DebugLog("[Keychain] did get uuid(\(uuid)) for key: \(uniqueIdentifierKey), service: \(service)")
         return uuid
     }
 }
