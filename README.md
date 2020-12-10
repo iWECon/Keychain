@@ -20,17 +20,26 @@ let keychain = Keychain(serivce: "custome-service-name")
 let key = "KeychainTestKey"
 let value = "isKeychainTest"
 
-// set or update
-keychain.set("isKeychainTest", forKey: "KeychainTestKey")
+// set or update, string
+keychain.set(value, forKey: key)
+
+// other, object
+keychain.set(UIViewController(), forKey: key)
+
+// or data
+keychain.set(Data(), forKey: key)
 ```
 
 #### Get
 ```swift
-// get Any?
-keychain.value(forKey: key) as? String // result: isKeychainTest
-
 // get String?
 keychain.string(forKey: key) // result: isKeychainTest
+
+// get Any?
+keychain.object(forKey: key)
+
+// get Data?
+keychain.data(forKey: key)
 ```
 
 #### Remove/Delete
@@ -57,4 +66,13 @@ KeychainHelper.uniqueIdentifier()
 
 // or you can custome key and service for Keychain
 KeychainHelper.uniqueIdentifier("the-key-of-unique-identifier", forService: "com.xxxx.app.service")
+```
+
+
+## Install
+
+
+#### Swift Package Manager
+```swift
+.package("https://github.com/iWECon/Keychain", from: "3.0.0")
 ```

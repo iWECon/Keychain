@@ -16,14 +16,43 @@ public class Keychain {
     
 }
 
-public extension Keychain {
+extension Keychain {
     
     func query(forKey key: String) -> [CFString: Any] {
         Provider.query(secClass: .generic, service: service, account: key)
     }
+}
+
+public extension Keychain {
     
-    func data(forKey key: String) -> Data? {
-        let query = self.query(forKey: key)
+    /// update if exists, add if not exists.
+    @discardableResult func set(_ value: NSCoding, forKey key: String) -> Bool {
+        set(NSKeyedArchiver.archivedData(withRootObject: value), forKey: key)
+    }
+    
+    @discardableResult func set(_ value: String, forKey key: String) -> Bool {
+        guard let data = value.data(using: .utf8) else {
+            return false
+        }
+        return set(data, forKey: key)
+    }
+    
+    @discardableResult func set(_ value: Data, forKey key: String) -> Bool {
+        var query = self.query(forKey: key)
+        if SecItemCopyMatching(query as CFDictionary, nil) == noErr { // update if exists
+            let changes = [kSecValueData: value]
+            return SecItemUpdate(query as CFDictionary, changes as CFDictionary) == noErr
+        }
+        // add if not exists
+        query[kSecValueData] = value
+        return SecItemAdd(query as CFDictionary, nil) == noErr
+    }
+    
+    @discardableResult func data(forKey key: String) -> Data? {
+        var query = self.query(forKey: key)
+        query[kSecReturnData] = kCFBooleanTrue
+        query[kSecMatchLimit] = kSecMatchLimitOne
+        
         var keyData: CFTypeRef?
         if SecItemCopyMatching(query as CFDictionary, &keyData) == noErr {
             guard let kd = keyData as? Data else { return nil }
@@ -31,38 +60,17 @@ public extension Keychain {
         }
         return nil
     }
-}
-
-public extension Keychain {
     
-    /// update if exists, add if not exists.
-    @discardableResult func set(_ value: Any, forKey key: String) -> Bool {
-        var query = self.query(forKey: key)
-        if SecItemCopyMatching(query as CFDictionary, nil) == noErr { // update if exists
-            let changes = [kSecValueData: NSKeyedArchiver.archivedData(withRootObject: value)]
-            return SecItemUpdate(query as CFDictionary, changes as CFDictionary) == noErr
+    @discardableResult func object(forKey key: String) -> Any? {
+        guard let dt = data(forKey: key) else {
+            return nil
         }
-        // add if not exists
-        query[kSecValueData] = NSKeyedArchiver.archivedData(withRootObject: value)
-        return SecItemAdd(query as CFDictionary, nil) == noErr
-    }
-    
-    @discardableResult func value(forKey key: String) -> Any? {
-        var keychain = self.query(forKey: key)
-        keychain[kSecReturnData] = kCFBooleanTrue
-        keychain[kSecMatchLimit] = kSecMatchLimitOne
-        
-        var ret: Any?
-        var keyData: CFTypeRef?
-        if SecItemCopyMatching(keychain as CFDictionary, &keyData) == noErr {
-            guard let kd = keyData as? Data else { return nil }
-            ret = NSKeyedUnarchiver.unarchiveObject(with: kd)
-        }
-        return ret
+        return NSKeyedUnarchiver.unarchiveObject(with: dt)
     }
     
     @discardableResult func string(forKey key: String) -> String? {
-        value(forKey: key) as? String
+        guard let dt = data(forKey: key) else { return nil }
+        return String(data: dt, encoding: .utf8)
     }
     
     @discardableResult func remove(key: String) -> Bool {
