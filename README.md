@@ -23,9 +23,6 @@ let value = "isKeychainTest"
 // set or update, string
 keychain.set(value, forKey: key)
 
-// other, object
-keychain.set(UIViewController(), forKey: key)
-
 // or data
 keychain.set(Data(), forKey: key)
 ```
@@ -34,9 +31,6 @@ keychain.set(Data(), forKey: key)
 ```swift
 // get String?
 keychain.string(forKey: key) // result: isKeychainTest
-
-// get Any?
-keychain.object(forKey: key)
 
 // get Data?
 keychain.data(forKey: key)
