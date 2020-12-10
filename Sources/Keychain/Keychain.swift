@@ -25,11 +25,7 @@ extension Keychain {
 
 public extension Keychain {
     
-    /// update if exists, add if not exists.
-    @discardableResult func set(_ value: NSCoding, forKey key: String) -> Bool {
-        set(NSKeyedArchiver.archivedData(withRootObject: value), forKey: key)
-    }
-    
+    /// set if not exists, update if exists
     @discardableResult func set(_ value: String, forKey key: String) -> Bool {
         guard let data = value.data(using: .utf8) else {
             return false
@@ -37,6 +33,11 @@ public extension Keychain {
         return set(data, forKey: key)
     }
     
+    /// set if not exists, update if exists
+    /// - Parameters:
+    ///   - value: can use `NSKeyedArchiver.archivedData(withRootObject: Any)` general
+    ///   - key: the key of the value
+    /// - Returns: return true if success, return false if failed
     @discardableResult func set(_ value: Data, forKey key: String) -> Bool {
         var query = self.query(forKey: key)
         if SecItemCopyMatching(query as CFDictionary, nil) == noErr { // update if exists
@@ -59,13 +60,6 @@ public extension Keychain {
             return kd
         }
         return nil
-    }
-    
-    @discardableResult func object(forKey key: String) -> Any? {
-        guard let dt = data(forKey: key) else {
-            return nil
-        }
-        return NSKeyedUnarchiver.unarchiveObject(with: dt)
     }
     
     @discardableResult func string(forKey key: String) -> String? {
