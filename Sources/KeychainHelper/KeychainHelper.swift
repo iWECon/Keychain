@@ -24,7 +24,7 @@ public extension KeychainHelper {
     
     private static func DebugLog(_ value: String) {
         #if DEBUG
-        print("[KeychainHelper.uniqueIdentifer]: ")
+        print("[KeychainHelper.uniqueIdentifer]: \(value)")
         #endif
     }
     
