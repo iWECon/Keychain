@@ -12,7 +12,7 @@ public struct KeychainHelper {
     private init() { }
     
     private static var projectBundleIdentifier: String {
-        (((Bundle.main.infoDictionary ?? [:])["CFBundleIdentifier"] as? String) ?? "") + "_uniqueIdentifier"
+        Bundle.main.bundleIdentifier ?? ""
     }
     
     private static func generationUUID() -> String {
