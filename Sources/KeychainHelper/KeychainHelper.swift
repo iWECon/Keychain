@@ -11,6 +11,12 @@ import Keychain
 public struct KeychainHelper {
     private init() { }
     
+    #if DEBUG
+    public static var logEnabled: Bool = true
+    #else
+    public static var logEnabled: Bool = false
+    #endif
+    
     private static var projectBundleIdentifier: String {
         Bundle.main.bundleIdentifier ?? ""
     }
@@ -23,9 +29,8 @@ public struct KeychainHelper {
 public extension KeychainHelper {
     
     private static func DebugLog(_ value: String) {
-        #if DEBUG
+        guard Self.logEnabled else { return }
         print("[KeychainHelper.uniqueIdentifer]: \(value)")
-        #endif
     }
     
     static func uniqueIdentifier(_ key: String = "uniqueIdentifier", forService service: String = Bundle.main.bundleIdentifier ?? "") -> String {
